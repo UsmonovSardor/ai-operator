@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Operator Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080b14;--surface:#0e1420;--border:rgba(99,210,255,0.12);--accent:#63d2ff;--accent2:#7b6ff0;--green:#4ade80;--muted:#5a6a8a;--text:#e2eeff;--glow:0 0 40px rgba(99,210,255,0.15)}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,210,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,210,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.container{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{padding:28px 0;border-bottom:1px solid var(--border);backdrop-filter:blur(20px);position:sticky;top:0;background:rgba(8,11,20,0.85);z-index:100}
+.header-inner{display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--glow)}
+.logo-text{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.logo-sub{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.status-pill{display:flex;align-items:center;gap:8px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);padding:6px 14px;border-radius:100px;font-size:13px;color:var(--green);font-family:'JetBrains Mono',monospace}
+.status-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+main{padding:40px 0}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color 0.3s,transform 0.2s}
+.stat-card:hover{border-color:rgba(99,210,255,0.3);transform:translateY(-2px)}
+.stat-icon{font-size:24px;margin-bottom:12px}
+.stat-value{font-size:36px;font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:6px}
+.stat-label{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.content-grid{display:grid;grid-template-columns:1fr 360px;gap:20px}
+@media(max-width:900px){.content-grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px}
+.panel-header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent)}
+.panel-body{padding:20px}
+.call-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.call-item:last-child{border-bottom:none}
+.call-number{font-family:'JetBrains Mono',monospace;font-size:14px}
+.call-time{font-size:11px;color:var(--muted);margin-top:3px}
+.call-duration{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent)}
+.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-family:'JetBrains Mono',monospace}
+.badge-active{background:rgba(74,222,128,0.1);color:var(--green);border:1px solid rgba(74,222,128,0.3)}
+.badge-ended{background:rgba(90,106,138,0.1);color:var(--muted);border:1px solid var(--border)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px}
+.empty-state .icon{font-size:32px;margin-bottom:12px;opacity:0.5}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-key{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.info-val{font-size:13px;font-weight:600}
+.info-val.mono{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:11px;word-break:break-all;max-width:200px;text-align:right}
+.btn-refresh{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;transition:all 0.2s}
+.btn-refresh:hover{border-color:var(--accent);color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+<div class="container">
+<div class="header-inner">
+<div class="logo">
+<div class="logo-icon">🤖</div>
+<div>
+<div class="logo-text">AI Operator</div>
+<div class="logo-sub">OPENAI GPT-4o + VAPI</div>
+</div>
+</div>
+<div class="status-pill"><div class="status-dot"></div><span id="server-status">ONLINE</span></div>
+</div>
+</div>
+</header>
+<main>
+<div class="container">
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-icon">📞</div><div class="stat-value" id="total-calls">0</div><div class="stat-label">TOTAL CALLS</div></div>
+<div class="stat-card"><div class="stat-icon">🔴</div><div class="stat-value" id="active-calls">0</div><div class="stat-label">ACTIVE NOW</div></div>
+<div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-value" id="avg-duration">0</div><div class="stat-label">AVG DURATION (S)</div></div>
+<div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-value" id="uptime">0</div><div class="stat-label">UPTIME (S)</div></div>
+</div>
+<div class="content-grid">
+<div class="panel">
+<div class="panel-header"><span class="panel-title">📋 Call Log</span><button class="btn-refresh" onclick="loadData()">↻ Refresh</button></div>
+<div class="panel-body"><div id="active-section"></div><div id="call-history"></div></div>
+</div>
+<div>
+<div class="panel">
+<div class="panel-header"><span class="panel-title">🤖 Operator Config</span></div>
+<div class="panel-body">
+<div class="info-row"><span class="info-key">NAME</span><span class="info-val" id="op-name">Loading...</span></div>
+<div class="info-row"><span class="info-key">MODEL</span><span class="info-val mono" id="op-model">—</span></div>
+<div class="info-row"><span class="info-key">COMPANY</span><span class="info-val" id="op-company">—</span></div>
+<div class="info-row"><span class="info-key">STATUS</span><span class="info-val"><span class="badge badge-active">READY</span></span></div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-header"><span class="panel-title">🔌 API Endpoints</span></div>
+<div class="panel-body">
+<div class="info-row"><span class="info-key">VAPI LLM</span><span class="info-val mono" id="llm-url">—</span></div>
+<div class="info-row"><span class="info-key">WEBHOOK</span><span class="info-val mono" id="webhook-url">—</span></div>
+<div class="info-row"><span class="info-key">HEALTH</span><span class="info-val mono" id="health-url">—</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+const BASE=window.location.origin;
+document.getElementById('llm-url').textContent=BASE+'/chat/completions';
+document.getElementById('webhook-url').textContent=BASE+'/webhook';
+document.getElementById('health-url').textContent=BASE+'/health';
+async function loadData(){
+  try{
+    const[s,c]=await Promise.all([fetch('/api/stats').then(r=>r.json()),fetch('/api/calls').then(r=>r.json())]);
+    document.getElementById('total-calls').textContent=s.totalCalls;
+    document.getElementById('active-calls').textContent=s.activeCalls;
+    document.getElementById('avg-duration').textContent=s.avgDuration;
+    document.getElementById('uptime').textContent=s.uptime;
+    document.getElementById('op-name').textContent=s.operatorName;
+    document.getElementById('op-model').textContent=s.model;
+    document.getElementById('op-company').textContent=s.companyName;
+    const ah=document.getElementById('active-section');
+    ah.innerHTML=c.active.map(x=>'<div class="call-item"><div><div class="call-number">'+x.callerNumber+'</div><div class="call-time">'+new Date(x.startTime).toLocaleTimeString()+'</div></div><span class="badge badge-active">LIVE</span></div>').join('');
+    const ch=document.getElementById('call-history');
+    ch.innerHTML=c.history.length===0?'<div class="empty-state"><div class="icon">📭</div>No calls yet...</div>':c.history.slice(0,20).map(x=>'<div class="call-item"><div><div class="call-number">'+x.callerNumber+'</div><div class="call-time">'+new Date(x.startTime).toLocaleString()+'</div></div><div style="text-align:right"><div class="call-duration">'+x.duration+'s</div><span class="badge badge-ended">'+x.endReason+'</span></div></div>').join('');
+  }catch(e){document.getElementById('server-status').textContent='OFFLINE';}
+}
+loadData();
+setInterval(loadData,5000);
+</script>
+</body>
+</html>
